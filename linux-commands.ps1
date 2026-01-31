@@ -441,5 +441,6 @@ if (Test-Path -Path $AliasesPath) {
 }
 
 Write-Host "Linux command wrappers loaded successfully!" -ForegroundColor Green
-Write-Host "Available commands: ls, ll, grep, ps, find, mc, htop, btop, open, touch, diff, chmod" -ForegroundColor Cyan
+Write-Host "Available commands: ls, ll, grep, ps, find, touch, diff, chmod" -ForegroundColor Cyan
+Write-Host "Available aliases: mc, btop, open" -ForegroundColor Cyan
 Write-Host "Location: $PSCommandPath" -ForegroundColor Cyan

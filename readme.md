@@ -114,6 +114,35 @@ winget install GNU.Nano
 nano filename.txt
 ```
 
+### `touch` - Create empty file or update timestamp
+- **Supported flags:**
+  - (none for basic usage)
+
+**Examples:**
+```powershell
+touch newfile.txt
+```
+
+### `diff` - Compare files line by line
+- **Supported flags:**
+  - `-u` : Unified diff format
+  - `-q` : Report only if files differ
+
+**Examples:**
+```powershell
+diff file1.txt file2.txt
+```
+
+### `chmod` - Change file permissions
+- **Supported flags:**
+  - Symbolic mode (e.g., `u+x`, `g-w`, `o=r`)
+  - Octal mode (e.g., `755`, `644`)
+
+**Examples:**
+```powershell
+chmod +x script.sh
+```
+
 ## Installation
 
 To make these commands available automatically whenever you start PowerShell (like `.zshrc` for zsh), run this single block from the directory containing `linux-commands.ps1` (same approach as in agent.md):
@@ -169,31 +198,9 @@ This loads the functions temporarily for the current session only.
 3. **ps user info**: May require elevated privileges to show user information for all processes
 4. **find predicates**: Supports basic predicates; advanced options like `-exec`, `-mtime` not yet implemented
 
-## Additional Linux Commands (Not Yet Implemented)
+## Additional Linux Commands (Planned)
 
 These are commonly used Linux commands that do NOT exist in PowerShell and would benefit from wrappers:
-
-### File Operations
-- **`touch`** - Create empty file or update timestamp
-  - PowerShell equivalent: `New-Item`, `Set-ItemProperty`
-  - Supported flags:
-    - (none for basic usage)
-  - Example: `touch newfile.txt`
-
-- **`diff`** - Compare files line by line
-  - PowerShell equivalent: `Compare-Object`
-  - Supported flags:
-    - `-u` : Unified diff format
-    - `-q` : Report only if files differ
-  - Example: `diff file1.txt file2.txt`
-
-### Permissions
-- **`chmod`** - Change file permissions
-  - PowerShell equivalent: `icacls`, `Set-Acl`
-  - Supported flags:
-    - Symbolic mode (e.g., `u+x`, `g-w`, `o=r`)
-    - Octal mode (e.g., `755`, `644`)
-  - Example: `chmod +x script.sh`
 
 ## Future Enhancements
 
