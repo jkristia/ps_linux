@@ -54,12 +54,18 @@ New-Item -Path $PROFILE -ItemType File -Force
 $LinuxCommandsPath = Join-Path $ProfileDir "linux-commands.ps1"
 Copy-Item -Path "linux-commands.ps1" -Destination $LinuxCommandsPath -Force
 
-# Add sourcing line to profile
+# Copy aliases.ps1 to profile directory
+$AliasesPath = Join-Path $ProfileDir "aliases.ps1"
+Copy-Item -Path "aliases.ps1" -Destination $AliasesPath -Force
+
+# Add sourcing lines to profile
 Add-Content -Path $PROFILE -Value ". `"$LinuxCommandsPath`""
+Add-Content -Path $PROFILE -Value ". `"$AliasesPath`""
 
 # Verify installation
 Write-Host "Linux commands installed!"
 Write-Host "Available commands: ls, grep, ps, find"
+Write-Host "Available aliases: mc, btop, open"
 Write-Host "Location: $PROFILE"
 ```
 
