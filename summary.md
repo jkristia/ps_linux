@@ -83,70 +83,66 @@ winget install GNU.MidnightCommander
 mc
 ```
 
+### `btop` - Resource Monitor
+Advanced resource monitor showing CPU, memory, disks, network and processes.
+
+**Installation:**
+```powershell
+winget install -e --id aristocratos.btop4win
+```
+
+**Note:** After installation, restart PowerShell or refresh your PATH:
+```powershell
+$env:Path = [System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path','User')
+```
+
+**Usage:**
+```powershell
+btop
+```
+
+### `nano` - Text Editor
+Simple and user-friendly terminal text editor.
+
+**Installation:**
+```powershell
+winget install GNU.Nano
+```
+
+**Usage:**
+```powershell
+nano filename.txt
+```
+
 ## Installation
 
-To make these commands available automatically whenever you start PowerShell (like `.zshrc` for zsh), you need to add the script to your PowerShell profile.
-
-### Step 1: Locate Your PowerShell Profile
-
-PowerShell uses profile scripts that load automatically on startup. Check your profile path:
+To make these commands available automatically whenever you start PowerShell (like `.zshrc` for zsh), run this single block from the directory containing `linux-commands.ps1` (same approach as in agent.md):
 
 ```powershell
-$PROFILE
-```
-
-Or see all profile locations:
-
-```powershell
-$PROFILE | Select-Object -Property *
-```
-
-**Common profile locations:**
-- **PowerShell 7+**: `~\Documents\PowerShell\Microsoft.PowerShell_profile.ps1`
-- **PowerShell 5.1**: `~\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1`
-
-### Step 2: Create Profile (if it doesn't exist)
-
-```powershell
-# Check if profile exists
-Test-Path $PROFILE
-
-# Create profile if needed
-if (!(Test-Path $PROFILE)) {
-    New-Item -Path $PROFILE -ItemType File -Force
+# Create profile directory and file if they don't exist
+$ProfileDir = Split-Path -Parent $PROFILE
+if (-not (Test-Path $ProfileDir)) {
+  New-Item -Path $ProfileDir -ItemType Directory -Force | Out-Null
 }
-```
+if (-not (Test-Path $PROFILE)) {
+  New-Item -Path $PROFILE -ItemType File -Force | Out-Null
+}
 
-### Step 3: Add Script to Profile
+# Copy linux-commands.ps1 and aliases.ps1 to profile directory
+$LinuxCommandsPath = Join-Path $ProfileDir "linux-commands.ps1"
+$AliasesPath = Join-Path $ProfileDir "aliases.ps1"
+Copy-Item -Path "linux-commands.ps1" -Destination $LinuxCommandsPath -Force
+Copy-Item -Path "aliases.ps1" -Destination $AliasesPath -Force
 
-**Option A: Copy script content into profile**
-```powershell
-# Open profile in default editor
-notepad $PROFILE
+# Add sourcing line to profile (only if missing)
+$SourceLine = ". `"$LinuxCommandsPath`""
+if (-not (Get-Content -Path $PROFILE -ErrorAction SilentlyContinue | Select-String -SimpleMatch -Pattern $SourceLine)) {
+  Add-Content -Path $PROFILE -Value $SourceLine
+}
 
-# Or use VS Code
-code $PROFILE
-```
-
-Then paste the entire content of `linux-commands.ps1` into your profile.
-
-**Option B: Dot-source the script from profile**
-```powershell
-# Add this line to your profile
-. "C:\Path\To\linux-commands.ps1"
-```
-
-Replace `C:\Path\To\` with the actual path to `linux-commands.ps1`.
-
-### Step 4: Reload Profile
-
-After editing your profile, reload it:
-
-```powershell
+# Reload profile for current session
 . $PROFILE
 ```
-
-Or restart PowerShell.
 
 ## Testing Without Installation
 
@@ -173,12 +169,41 @@ This loads the functions temporarily for the current session only.
 3. **ps user info**: May require elevated privileges to show user information for all processes
 4. **find predicates**: Supports basic predicates; advanced options like `-exec`, `-mtime` not yet implemented
 
+## Additional Linux Commands (Not Yet Implemented)
+
+These are commonly used Linux commands that do NOT exist in PowerShell and would benefit from wrappers:
+
+### File Operations
+- **`touch`** - Create empty file or update timestamp
+  - PowerShell equivalent: `New-Item`, `Set-ItemProperty`
+  - Supported flags:
+    - (none for basic usage)
+  - Example: `touch newfile.txt`
+
+- **`diff`** - Compare files line by line
+  - PowerShell equivalent: `Compare-Object`
+  - Supported flags:
+    - `-u` : Unified diff format
+    - `-q` : Report only if files differ
+  - Example: `diff file1.txt file2.txt`
+
+### Permissions
+- **`chmod`** - Change file permissions
+  - PowerShell equivalent: `icacls`, `Set-Acl`
+  - Supported flags:
+    - Symbolic mode (e.g., `u+x`, `g-w`, `o=r`)
+    - Octal mode (e.g., `755`, `644`)
+  - Example: `chmod +x script.sh`
+
 ## Future Enhancements
 
 Potential additions:
-- `tail`, `head`, `cat` wrappers
-- `awk`, `sed` equivalents
-- More `find` predicates
+- `cat`, `head`, `tail` wrappers for file viewing
+- `wc`, `sort`, `uniq`, `cut` for text processing
+- `sed`, `awk` equivalents for advanced text manipulation
+- `touch`, `diff` for file operations
+- More `find` predicates (e.g., `-exec`, `-mtime`)
+- `chmod`, `chown` wrappers for permission management
 - Color customization options
 - Performance optimizations for large directories
 

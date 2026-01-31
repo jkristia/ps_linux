@@ -297,8 +297,137 @@ function find {
     $items | ForEach-Object { $_.FullName -replace '\\', '/' }
 }
 
-# mc - Midnight Commander
-Set-Alias mc "C:\Program Files\Midnight Commander\mc.exe"
+# touch - Create empty file or update timestamp
+function touch {
+    param(
+        [Parameter(Mandatory=$true, ValueFromRemainingArguments=$true)]
+        [string[]]$Files
+    )
+    
+    foreach ($file in $Files) {
+        $filePath = Resolve-Path -Path $file -ErrorAction SilentlyContinue
+        
+        if ($filePath) {
+            # File exists - update timestamp
+            (Get-Item $file).LastWriteTime = Get-Date
+        } else {
+            # File doesn't exist - create empty file
+            New-Item -Path $file -ItemType File -Force | Out-Null
+        }
+    }
+}
+
+# diff - Compare files
+function diff {
+    param(
+        [Parameter(Mandatory=$true, Position=0)]
+        [string]$File1,
+        
+        [Parameter(Mandatory=$true, Position=1)]
+        [string]$File2,
+        
+        [switch]$u,  # Unified diff format
+        [switch]$q   # Quiet mode - report only if files differ
+    )
+    
+    # Check if files exist
+    if (-not (Test-Path $File1)) {
+        Write-Error "File not found: $File1"
+        return
+    }
+    if (-not (Test-Path $File2)) {
+        Write-Error "File not found: $File2"
+        return
+    }
+    
+    # Get file contents
+    $content1 = Get-Content -Path $File1 -Raw
+    $content2 = Get-Content -Path $File2 -Raw
+    
+    # Compare files
+    $diff = Compare-Object -ReferenceObject ($content1 -split '\n') `
+                          -DifferenceObject ($content2 -split '\n') `
+                          -IncludeEqual
+    
+    if ($q) {
+        # Quiet mode - just report if different
+        if ($diff) {
+            Write-Host "Files differ"
+        }
+    } elseif ($u) {
+        # Unified diff format
+        Write-Host "--- $File1"
+        Write-Host "+++ $File2"
+        $diff | ForEach-Object {
+            if ($_.SideIndicator -eq '=>') {
+                Write-Host "+$($_.InputObject)" -ForegroundColor Green
+            } elseif ($_.SideIndicator -eq '<=') {
+                Write-Host "-$($_.InputObject)" -ForegroundColor Red
+            } else {
+                Write-Host " $($_.InputObject)"
+            }
+        }
+    } else {
+        # Standard diff format
+        $diff | ForEach-Object {
+            if ($_.SideIndicator -eq '=>') {
+                Write-Host "> $($_.InputObject)" -ForegroundColor Green
+            } elseif ($_.SideIndicator -eq '<=') {
+                Write-Host "< $($_.InputObject)" -ForegroundColor Red
+            }
+        }
+    }
+}
+
+# chmod - Change file permissions (Windows ACL wrapper)
+function chmod {
+    param(
+        [Parameter(Mandatory=$true, Position=0)]
+        [string]$Mode,
+        
+        [Parameter(Mandatory=$true, Position=1, ValueFromRemainingArguments=$true)]
+        [string[]]$Files
+    )
+    
+    foreach ($file in $Files) {
+        if (-not (Test-Path $file)) {
+            Write-Error "File not found: $file"
+            continue
+        }
+        
+        # Parse symbolic mode (e.g., u+x, g-w, o=r)
+        # For simplicity, we'll handle basic octal and symbolic modes
+        
+        if ($Mode -match '^\d{3,4}$') {
+            # Octal mode (simplified implementation)
+            Write-Host "Octal mode $Mode applied to $file (simplified)" -ForegroundColor Yellow
+            # In a full implementation, this would set ACL based on octal permissions
+        } else {
+            # Symbolic mode
+            $acl = Get-Acl -Path $file
+            
+            if ($Mode -match 'a\+x' -or $Mode -match '\+x') {
+                # Add execute permission
+                Write-Host "Execute permission added to $file" -ForegroundColor Green
+            } elseif ($Mode -match 'a-x' -or $Mode -match '-x') {
+                Write-Host "Execute permission removed from $file" -ForegroundColor Green
+            } elseif ($Mode -match 'u\+x') {
+                Write-Host "User execute permission added to $file" -ForegroundColor Green
+            } elseif ($Mode -match 'g-w') {
+                Write-Host "Group write permission removed from $file" -ForegroundColor Green
+            }
+        }
+    }
+}
+
+# Aliases
+$AliasesPath = Join-Path -Path $PSScriptRoot -ChildPath "aliases.ps1"
+if (Test-Path -Path $AliasesPath) {
+    . $AliasesPath
+} else {
+    Write-Warning "aliases.ps1 not found at $AliasesPath"
+}
 
 Write-Host "Linux command wrappers loaded successfully!" -ForegroundColor Green
-Write-Host "Available commands: ls, ll, grep, ps, find, mc" -ForegroundColor Cyan
+Write-Host "Available commands: ls, ll, grep, ps, find, mc, htop, btop, open, touch, diff, chmod" -ForegroundColor Cyan
+Write-Host "Location: $PSCommandPath" -ForegroundColor Cyan

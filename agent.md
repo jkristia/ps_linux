@@ -43,14 +43,24 @@ function ls {
 
 ### Installing to profile
 ```powershell
-# Determine profile path
-$PROFILE | Select-Object -Property *
-
-# Create profile if it doesn't exist
+# Create profile directory and file if they don't exist
+$ProfileDir = Split-Path -Parent $PROFILE
+if (-not (Test-Path $ProfileDir)) {
+    New-Item -Path $ProfileDir -ItemType Directory -Force
+}
 New-Item -Path $PROFILE -ItemType File -Force
 
-# Append or merge script content to profile
-Add-Content -Path $PROFILE -Value (Get-Content script.ps1)
+# Copy linux-commands.ps1 to profile directory
+$LinuxCommandsPath = Join-Path $ProfileDir "linux-commands.ps1"
+Copy-Item -Path "linux-commands.ps1" -Destination $LinuxCommandsPath -Force
+
+# Add sourcing line to profile
+Add-Content -Path $PROFILE -Value ". `"$LinuxCommandsPath`""
+
+# Verify installation
+Write-Host "Linux commands installed!"
+Write-Host "Available commands: ls, grep, ps, find"
+Write-Host "Location: $PROFILE"
 ```
 
 ### Profile locations
