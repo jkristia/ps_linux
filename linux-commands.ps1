@@ -120,34 +120,43 @@ function grep {
         # If we have piped input, search through it
         if ($allInput.Count -gt 0) {
             $caseSensitive = -not $i
-            
-            foreach ($item in $allInput) {
-                # Convert object to string representation
-                $stringRep = if ($item -is [string]) {
-                    $item
-                } else {
-                    # For objects, get a formatted string representation
-                    $item | Out-String -Stream | Where-Object { $_ }
+
+            # Convert piped objects to a single formatted text stream to avoid
+            # Format-Table/Format-List sequencing errors (e.g., ll | grep ...)
+            $lines = $allInput | Out-String -Stream | Where-Object { $_ -ne "" }
+
+            $matchedLines = if ($caseSensitive) {
+                $lines | Where-Object { $_ -cmatch $Pattern }
+            } else {
+                $lines | Where-Object { $_ -match $Pattern }
+            }
+
+            if ($v) {
+                $matchedLines = $lines | Where-Object {
+                    if ($caseSensitive) { $_ -cnotmatch $Pattern } else { $_ -notmatch $Pattern }
                 }
-                
-                # Search through the string representation
-                $matches = if ($caseSensitive) {
-                    $stringRep | Where-Object { $_ -cmatch $Pattern }
-                } else {
-                    $stringRep | Where-Object { $_ -match $Pattern }
-                }
-                
-                # If we found matches, output the original object
-                if ($matches) {
+            }
+
+            if ($n) {
+                $lineNumber = 0
+                $lines | ForEach-Object {
+                    $lineNumber++
                     if ($v) {
-                        # Invert match - skip this item
-                        continue
+                        if ($caseSensitive) {
+                            if ($_ -cnotmatch $Pattern) { "${lineNumber}:$_" }
+                        } else {
+                            if ($_ -notmatch $Pattern) { "${lineNumber}:$_" }
+                        }
+                    } else {
+                        if ($caseSensitive) {
+                            if ($_ -cmatch $Pattern) { "${lineNumber}:$_" }
+                        } else {
+                            if ($_ -match $Pattern) { "${lineNumber}:$_" }
+                        }
                     }
-                    $item
-                } elseif ($v) {
-                    # Invert match - output non-matching items
-                    $item
                 }
+            } else {
+                $matchedLines
             }
         }
         # Otherwise search in files
@@ -229,6 +238,9 @@ function ps {
         $processes | Format-Table -AutoSize Id, ProcessName, CPU, WorkingSet
     }
 }
+
+# Ensure the built-in alias 'ps' does not override this function
+Remove-Item -Path Alias:ps -ErrorAction SilentlyContinue
 
 # find - Search for files
 function find {
